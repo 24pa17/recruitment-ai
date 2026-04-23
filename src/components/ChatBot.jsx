@@ -32,29 +32,47 @@ export default function ChatBot() {
 
     try {
       const res = await askAI(input);
-      console.log("API RESPONSE:", res); // 🔥 DEBUG
+      console.log("API RESPONSE:", res);
 
       let newMessages = [];
 
-      // ✅ TEXT RESPONSE
-      if (res?.reply) {
+      // ✅ Candidate matching result
+      if (res?.type === "job_result") {
+        newMessages.push({
+          sender: "bot",
+          type: "job_result",
+          data: res
+        });
+      }
+
+      // ✅ Job openings result
+      else if (res?.type === "job_list") {
+        newMessages.push({
+          sender: "bot",
+          type: "job_list",
+          jobs: res.jobs || []
+        });
+      }
+
+      // ✅ Interview list result
+      else if (res?.type === "interview_list") {
+        newMessages.push({
+          sender: "bot",
+          type: "interview_list",
+          interviews: res.interviews || []
+        });
+      }
+
+      // ✅ Normal chatbot / success / error text
+      else if (res?.type === "text") {
         newMessages.push({
           sender: "bot",
           type: "text",
-          text: res.reply
+          text: res.reply || "No response from AI"
         });
       }
 
-      // ✅ CANDIDATE MATCHES
-      if (res?.matches && res.matches.length > 0) {
-        newMessages.push({
-          sender: "bot",
-          type: "candidates",
-          data: res.matches
-        });
-      }
-
-      // ❌ FALLBACK
+      // ✅ Fallback
       if (newMessages.length === 0) {
         newMessages.push({
           sender: "bot",
@@ -64,7 +82,6 @@ export default function ChatBot() {
       }
 
       setMessages((prev) => [...prev, ...newMessages]);
-
     } catch (error) {
       console.error(error);
       setMessages((prev) => [
@@ -83,20 +100,22 @@ export default function ChatBot() {
 
   return (
     <Box sx={{ display: "flex", width: "100%", height: "100vh" }}>
-      
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Chat Area */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        
-        {/* Header */}
         <Box sx={{ p: 2, borderBottom: "1px solid #ddd" }}>
           <Typography variant="h5">Recruitment Assistant</Typography>
         </Box>
 
-        {/* Messages */}
-        <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            p: 2,
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
           {messages.map((msg, i) => (
             <MessageBubble key={i} message={msg} />
           ))}
@@ -110,7 +129,6 @@ export default function ChatBot() {
           <SuggestionButtons onClick={setInput} />
         </Box>
 
-        {/* Input */}
         <Box sx={{ display: "flex", p: 2, borderTop: "1px solid #ddd" }}>
           <TextField
             fullWidth
@@ -124,12 +142,10 @@ export default function ChatBot() {
               }
             }}
           />
-
           <IconButton color="primary" onClick={handleSend}>
             <SendIcon />
           </IconButton>
         </Box>
-
       </Box>
     </Box>
   );
